@@ -1,12 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { LogoutButton } from '@/components/logout-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
-import { DollarSign, Package, BarChart3, TrendingUp } from 'lucide-react'
+import { DollarSign, Package, BarChart3, TrendingUp, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { deleteUpload } from '@/app/actions/delete-upload'
 
 async function getDashboardData() {
   const supabase = await createClient()
@@ -20,6 +17,11 @@ async function getDashboardData() {
   if (error) {
     console.error('Error fetching sales data:', error)
     return null
+  }
+
+  // DEBUG: Log the first few rows to verify date format
+  if (sales && sales.length > 0) {
+      console.log('DEBUG: First 3 sales rows from DB:', JSON.stringify(sales.slice(0, 3), null, 2))
   }
 
   if (!sales || sales.length === 0) {
@@ -75,27 +77,6 @@ export default async function Home() {
   const data = await getDashboardData()
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50/40">
-      <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold tracking-tight">KLOB</h1>
-          <nav className="flex items-center space-x-4 text-sm font-medium">
-            <Link href="/" className="text-primary transition-colors hover:text-primary/80">Overview</Link>
-            <Link href="/upload" className="text-muted-foreground transition-colors hover:text-primary">Upload</Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-2">
-          {data && (
-            <form action={deleteUpload}>
-              <Button variant="destructive" size="sm">
-                Clear Data
-              </Button>
-            </form>
-          )}
-          <LogoutButton />
-        </div>
-      </header>
-
       <main className="flex-1 space-y-8 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
@@ -126,7 +107,7 @@ export default async function Home() {
                 title="Total Revenue" 
                 value={`$${data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
                 icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-                description="+20.1% from last month" 
+                description="+20.1% from last month" // Placeholder trend
               />
               <KPICard 
                 title="Units Sold" 
@@ -171,7 +152,6 @@ export default async function Home() {
           </div>
         )}
       </main>
-    </div>
   )
 }
 
