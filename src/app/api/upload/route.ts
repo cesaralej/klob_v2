@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server'
 import { parseSpreadsheet } from '@/lib/parser'
 import { validateAndNormalize } from '@/lib/validator'
@@ -27,33 +26,64 @@ export async function POST(req: Request) {
     const buffer = await file.arrayBuffer()
     const rawData = await parseSpreadsheet(buffer)
     
-    if (!rawData || rawData.length === 0) {
-        return Response.json({ error: 'Empty file' }, { status: 400 })
+    // Check if we got anything
+    if (rawData.sales.length === 0 && rawData.products.length === 0 && rawData.transfers.length === 0) {
+        return Response.json({ error: 'Empty file or no recognizable sheets found' }, { status: 400 })
     }
 
     // 2. Validate
-    const { validRows, errors } = validateAndNormalize(rawData)
+    const { sales, products, transfers, errors } = validateAndNormalize(rawData)
+    
+    // Fail fast if too many errors? 
+    // "Fail on ANY critical error for now to enforce quality." - preserving previous logic intent
+    // But we might want to return warnings.
+    // Let's fail if we extracted NOTHING valid but had errors.
+    
+    const validCount = sales.length + products.length + transfers.length
     
     if (errors.length > 0) {
-        // Fail fast logic? "Warnings allowed but must be explicit... Fail fast if schema is invalid"
-        // If many errors, fail. If few? User said: "Data looks wrong, users must re-upload."
-        // We will fail on ANY critical error for now to enforce quality.
-        return Response.json({ error: 'Validation Failed', details: errors.slice(0, 10) }, { status: 400 })
+        // If critical errors exist
+        // Return 400 with details
+        return Response.json({ 
+            error: 'Validation Failed', 
+            details: errors.slice(0, 20),
+            stats: { validSales: sales.length, validProducts: products.length, validTransfers: transfers.length }
+        }, { status: 400 })
+    }
+
+    if (validCount === 0) {
+         return Response.json({ error: 'No valid rows found to ingest' }, { status: 400 })
     }
 
     // 3. Ingest (Transactional RPC)
     const { data: uploadId, error: dbError } = await supabase.rpc('ingest_upload', {
         p_user_id: user.id,
-        p_rows: validRows
+        p_sales: sales,
+        p_products: products,
+        p_transfers: transfers
     })
 
     if (dbError) {
         throw new Error(dbError.message)
     }
 
-    trackEvent(MONITORING_EVENTS.UPLOAD.SUCCESS, { userId: user.id, uploadId, rowCount: validRows.length })
+    trackEvent(MONITORING_EVENTS.UPLOAD.SUCCESS, { 
+        userId: user.id, 
+        uploadId, 
+        salesCount: sales.length,
+        productsCount: products.length,
+        transfersCount: transfers.length
+    })
 
-    return Response.json({ success: true, uploadId, rowCount: validRows.length })
+    return Response.json({ 
+        success: true, 
+        uploadId, 
+        counts: {
+            sales: sales.length,
+            products: products.length,
+            transfers: transfers.length
+        }
+    })
     
   } catch (err: any) {
     console.error('Upload error:', err)

@@ -34,15 +34,33 @@ create policy "Users can delete own uploads"
   using (auth.uid() = user_id);
 
 -- ----------------------------
--- 2. Products Table
+-- 2. Products Table (Updated)
 -- ----------------------------
 create table products (
   id uuid default uuid_generate_v4() primary key,
   upload_id uuid references uploads(id) on delete cascade not null,
   user_id uuid references auth.users not null,
-  sku text not null,
-  name text,
-  category text,
+  
+  -- Core Fields
+  codigo_unico text not null, -- SKU
+  
+  -- Additional Fields from Req
+  cantidad_pedida numeric,
+  fecha_almacen date,
+  tema text default 'Sin Tema',
+  
+  -- Common Fields
+  pvp numeric,
+  precio_coste numeric,
+  familia text,
+  talla text,
+  color text,
+  temporada text,
+  
+  -- Legacy/Optional
+  name text, -- mapped to descripcionFamilia or similar? Req says "descripcionFamilia" is in Sales, but Products has common fields.
+  category text, 
+
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -57,18 +75,40 @@ create policy "Users can insert own products"
   with check (auth.uid() = user_id);
 
 -- ----------------------------
--- 3. Sales Table
+-- 3. Sales Table (Updated)
 -- ----------------------------
 create table sales (
   id uuid default uuid_generate_v4() primary key,
   upload_id uuid references uploads(id) on delete cascade not null,
   user_id uuid references auth.users not null,
-  sale_date date not null,
-  sku text not null,
-  product_id uuid references products(id), -- optional link if products are guaranteed
-  size text,
-  quantity integer not null,
-  net_revenue numeric not null,
+  
+  -- Core fields
+  act text, -- Data version/ID
+  codigo_unico text, -- SKU
+  cantidad numeric not null,
+  pvp numeric,
+  subtotal numeric,
+  fecha_venta date,
+  tienda text not null,
+  codigo_tienda text,
+  
+  -- Product Details in Sales
+  temporada text,
+  familia text,
+  descripcion_familia text,
+  talla text,
+  color text,
+  precio_coste numeric,
+
+  -- Computed/Normalized
+  es_online boolean default false,
+  mes text,
+
+  -- Legacy mappings if needed
+  sku text generated always as (codigo_unico) stored, -- alias for backward compat if app uses 'sku'
+  sale_date date generated always as (fecha_venta) stored, -- alias
+  net_revenue numeric generated always as (subtotal) stored, -- alias
+  
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -82,8 +122,39 @@ create policy "Users can insert own sales"
   on sales for insert
   with check (auth.uid() = user_id);
 
--- Indexes for performance
+-- ----------------------------
+-- 4. Transfers Table (New)
+-- ----------------------------
+create table transfers (
+  id uuid default uuid_generate_v4() primary key,
+  upload_id uuid references uploads(id) on delete cascade not null,
+  user_id uuid references auth.users not null,
+  
+  codigo_unico text,
+  enviado numeric,
+  tienda text not null, -- Destination Store
+  fecha_enviado date,
+  
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table transfers enable row level security;
+
+create policy "Users can view own transfers"
+  on transfers for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own transfers"
+  on transfers for insert
+  with check (auth.uid() = user_id);
+
+-- ----------------------------
+-- Indexes
+-- ----------------------------
 create index idx_uploads_user on uploads(user_id);
 create index idx_products_upload on products(upload_id);
 create index idx_sales_upload on sales(upload_id);
-create index idx_sales_date on sales(sale_date);
+create index idx_transfers_upload on transfers(upload_id);
+
+create index idx_products_sku on products(codigo_unico);
+create index idx_sales_date on sales(fecha_venta);
