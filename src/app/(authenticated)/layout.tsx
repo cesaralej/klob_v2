@@ -1,4 +1,4 @@
-import { Header } from '@/components/header'
+import { Sidebar } from '@/components/sidebar'
 
 export default function AuthenticatedLayout({
   children,
@@ -6,9 +6,11 @@ export default function AuthenticatedLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50/40">
-      <Header />
-      {children}
+    <div className="min-h-screen bg-gray-50/40">
+      <Sidebar />
+      <div className="ml-60">
+        {children}
+      </div>
     </div>
   )
 }

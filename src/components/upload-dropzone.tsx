@@ -11,12 +11,14 @@ export default function UploadDropzone() {
   const [file, setFile] = useState<File | null>(null)
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState<string>('')
+  const [errorDetails, setErrorDetails] = useState<string[]>([])
   
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles?.length > 0) {
       setFile(acceptedFiles[0])
       setStatus('idle')
       setMessage('')
+      setErrorDetails([])
     }
   }, [])
 
@@ -33,6 +35,7 @@ export default function UploadDropzone() {
     if (!file) return
 
     setStatus('uploading')
+    setErrorDetails([])
     const formData = new FormData()
     formData.append('file', file)
 
@@ -45,11 +48,21 @@ export default function UploadDropzone() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Upload failed')
+        // Extract detailed errors if available
+        if (data.details && Array.isArray(data.details)) {
+          setErrorDetails(data.details)
+        }
+        // Build a more descriptive error message
+        let errorMsg = data.error || 'Upload failed'
+        if (data.stats) {
+          errorMsg += ` (Valid: ${data.stats.validSales || 0} sales, ${data.stats.validProducts || 0} products, ${data.stats.validTransfers || 0} transfers)`
+        }
+        throw new Error(errorMsg)
       }
 
       setStatus('success')
-      setMessage(`Successfully processed ${data.rowCount} rows.`)
+      const counts = data.counts || {}
+      setMessage(`Successfully processed ${counts.sales || 0} sales, ${counts.products || 0} products, ${counts.transfers || 0} transfers.`)
     } catch (err: any) {
       setStatus('error')
       setMessage(err.message)
@@ -88,7 +101,19 @@ export default function UploadDropzone() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
+          <AlertDescription>
+            <p>{message}</p>
+            {errorDetails.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-sm font-medium">Show {errorDetails.length} validation error(s)</summary>
+                <ul className="mt-2 list-disc list-inside text-xs max-h-40 overflow-y-auto">
+                  {errorDetails.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 

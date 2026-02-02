@@ -1,30 +1,30 @@
 
 export interface SalesData {
   act?: string
-  codigoUnico?: string
+  codigo_unico?: string
   cantidad: number
   pvp?: number
   subtotal?: number
-  fechaVenta?: string // ISO
+  fecha_venta?: string // ISO
   tienda: string
-  codigoTienda?: string
+  codigo_tienda?: string
   temporada?: string
   familia?: string
-  descripcionFamilia?: string
+  descripcion_familia?: string
   talla?: string
   color?: string
-  precioCoste?: number
-  esOnline: boolean
+  precio_coste?: number
+  es_online: boolean
   mes?: string
 }
 
 export interface ProductsData {
-  codigoUnico: string
-  cantidadPedida?: number
-  fechaAlmacen?: string // ISO
+  codigo_unico: string
+  cantidad_pedida?: number
+  fecha_almacen?: string // ISO
   tema: string
   pvp?: number
-  precioCoste?: number
+  precio_coste?: number
   familia?: string
   talla?: string
   color?: string
@@ -32,10 +32,10 @@ export interface ProductsData {
 }
 
 export interface TransfersData {
-  codigoUnico?: string
+  codigo_unico?: string
   enviado?: number
   tienda: string
-  fechaEnviado?: string
+  fecha_enviado?: string
 }
 
 export interface ValidationResult {
@@ -177,6 +177,17 @@ function parseDate(val: any): string | undefined {
       return undefined
   }
   return undefined
+  return undefined
+}
+
+// Check if a row is effectively empty (all values are null/undefined/empty string)
+function isEmptyRow(row: any): boolean {
+    if (!row) return true
+    return Object.values(row).every(val => {
+        if (val === null || val === undefined) return true
+        if (typeof val === 'string' && val.trim() === '') return true
+        return false
+    })
 }
 
 // --- Main Validator ---
@@ -186,6 +197,7 @@ export function validateAndNormalize(raw: { sales: any[], products: any[], trans
   
   // 1. Sales
   raw.sales.forEach((row, i) => {
+    if (isEmptyRow(row)) return
     const rowNum = i + 2 // approx
     
     // Helpers
@@ -265,14 +277,14 @@ export function validateAndNormalize(raw: { sales: any[], products: any[], trans
     const validSub = (subtotal !== 0 && !isNaN(subtotal)) // subtotal can be negative? "Subtotal > 0" in prompt text might just mean "exists"
     // Prompt: "cantidad ... Mandatory? Yes (or Subtotal > 0)"
     if (!validQty && !(subtotal > 0)) {
-        // result.errors.push(`Sales Row ${rowNum}: Invalid Quantity/Subtotal`)
-        // Drop? Or Report? 
-        // "Excel reads often include trailing rows..." -> Drop if empty-ish.
-        if (!codigoUnico) return 
         // If has SKU but no qty/rev, treat as 0? or Error?
-        // Prompt says mandatory. We will drop/error.
-        // Let's drop silently if SKU is missing too; error if SKU exists.
-        result.errors.push(`Sales Row ${rowNum}: Invalid Quantity/Subtotal for SKU ${codigoUnico}`)
+        // UPDATE: User confirmed "actual error is that some row have a quantity of 0".
+        // Strategy: Silently SKIP these rows if they seem to be "junk" (0 qty, 0 subtotal).
+        // If they have subtotal > 0 but qty 0, we might want to keep? The prompt said "Yes (or Subtotal > 0)".
+        // So if subtotal > 0, we keep it. 
+        // If subtotal <= 0 AND qty == 0, we SKIP.
+        
+        // Return without error -> Skip row
         return 
     }
     
@@ -288,26 +300,27 @@ export function validateAndNormalize(raw: { sales: any[], products: any[], trans
 
     result.sales.push({
         act,
-        codigoUnico: String(codigoUnico || '').trim(),
+        codigo_unico: String(codigoUnico || '').trim(),
         cantidad: quantity,
         pvp,
         subtotal,
-        fechaVenta,
+        fecha_venta: fechaVenta,
         tienda: String(tienda).trim(),
-        codigoTienda,
+        codigo_tienda: codigoTienda,
         temporada,
         familia,
-        descripcionFamilia: String(descripcionFamilia || '').trim(),
+        descripcion_familia: String(descripcionFamilia || '').trim(),
         talla,
         color,
-        precioCoste,
-        esOnline,
+        precio_coste: precioCoste,
+        es_online: esOnline,
         mes
     })
   })
   
   // 2. Products
   raw.products.forEach((row, i) => {
+     if (isEmptyRow(row)) return
      const rowNum = i + 2
      const keys = Object.keys(row)
      const find = (keywords: string[], heuristic?: any) => {
@@ -364,12 +377,12 @@ export function validateAndNormalize(raw: { sales: any[], products: any[], trans
     const temporada = row['temporada'] || find(['temporada'])
     
     result.products.push({
-        codigoUnico: String(codigoUnico).trim(),
-        cantidadPedida,
-        fechaAlmacen,
+        codigo_unico: String(codigoUnico).trim(),
+        cantidad_pedida: cantidadPedida,
+        fecha_almacen: fechaAlmacen,
         tema,
         pvp,
-        precioCoste,
+        precio_coste: precioCoste,
         familia,
         talla,
         color,
@@ -379,9 +392,10 @@ export function validateAndNormalize(raw: { sales: any[], products: any[], trans
   
   // 3. Transfers
   raw.transfers.forEach((row, i) => {
+      if (isEmptyRow(row)) return
       const rowNum = i + 2
       const keys = Object.keys(row)
-      const find = (keywords: string[]) => {
+      const find = (keywords: string[], heuristic?: any) => {
         for (const k of keys) {
             const nk = normKey(k)
             if (keywords.some(kw => nk === kw || nk.includes(kw))) return row[k]
@@ -400,10 +414,10 @@ export function validateAndNormalize(raw: { sales: any[], products: any[], trans
       }
       
       result.transfers.push({
-          codigoUnico: codigoUnico ? String(codigoUnico).trim() : undefined,
+          codigo_unico: codigoUnico ? String(codigoUnico).trim() : undefined,
           enviado,
           tienda: String(tienda).trim(),
-          fechaEnviado
+          fecha_enviado: fechaEnviado
       })
   })
 

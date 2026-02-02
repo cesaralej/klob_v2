@@ -1,206 +1,259 @@
-import { createClient } from '@/lib/supabase/server'
-import { LogoutButton } from '@/components/logout-button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { RevenueChart } from '@/components/dashboard/revenue-chart'
-import { DollarSign, Package, BarChart3, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { deleteUpload } from '@/app/actions/delete-upload'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  BarChart3, 
+  TrendingUp, 
+  Zap, 
+  Shield, 
+  ArrowRight,
+  Upload,
+  LineChart,
+  Target
+} from 'lucide-react'
 
-async function getDashboardData() {
-  const supabase = await createClient()
-  
-  // Fetch sales data
-  const { data: sales, error } = await supabase
-    .from('sales')
-    .select('sale_date, net_revenue, quantity, sku')
-    .order('sale_date', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching sales data:', error)
-    return null
-  }
-
-  if (!sales || sales.length === 0) {
-    return null
-  }
-
-  // Aggregate metrics
-  const totalRevenue = sales.reduce((sum, s) => sum + Number(s.net_revenue), 0)
-  const totalUnits = sales.reduce((sum, s) => sum + s.quantity, 0)
-  const uniqueSkus = new Set(sales.map(s => s.sku)).size
-  const avgOrderValue = totalRevenue / sales.length
-
-  // Aggregate chart data
-  const chartDataMap = sales.reduce((acc: Record<string, number>, sale) => {
-    let dateStr = 'Unknown'
-    if (sale.sale_date) {
-      try {
-        const d = new Date(sale.sale_date)
-        if (!isNaN(d.getTime())) {
-          // Use YYYY-MM-DD format for consistency
-          dateStr = d.toISOString().split('T')[0]
-        }
-      } catch {
-        dateStr = 'Unknown'
-      }
-    }
-    acc[dateStr] = (acc[dateStr] || 0) + Number(sale.net_revenue || 0)
-    return acc
-  }, {})
-
-  const chartData = Object.entries(chartDataMap)
-    .map(([date, revenue]) => ({
-      date,
-      revenue: Number(revenue)
-    }))
-    .filter(item => item.date !== 'Unknown')
-    .sort((a, b) => {
-      const dateA = new Date(a.date).getTime()
-      const dateB = new Date(b.date).getTime()
-      return dateA - dateB
-    })
-
-  return {
-    totalRevenue,
-    totalUnits,
-    uniqueSkus,
-    avgOrderValue,
-    chartData
-  }
-}
-
-export default async function Home() {
-  const data = await getDashboardData()
-
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50/40">
-      <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold tracking-tight">KLOB</h1>
-          <nav className="flex items-center space-x-4 text-sm font-medium">
-            <Link href="/" className="text-primary transition-colors hover:text-primary/80">Overview</Link>
-            <Link href="/upload" className="text-muted-foreground transition-colors hover:text-primary">Upload</Link>
+    <div className="flex min-h-screen flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+          <Link className="flex items-center gap-2 font-bold text-xl" href="/">
+            <BarChart3 className="h-6 w-6 text-primary" />
+            KLOB
+          </Link>
+          <nav className="flex items-center gap-4">
+            <Link href="/contact" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Contact
+            </Link>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">Login</Button>
+            </Link>
+            <Link href="/contact">
+              <Button size="sm">Request Demo</Button>
+            </Link>
           </nav>
-        </div>
-        <div className="flex items-center gap-2">
-          {data && (
-            <form action={deleteUpload}>
-              <Button variant="destructive" size="sm">
-                Clear Data
-              </Button>
-            </form>
-          )}
-          <LogoutButton />
         </div>
       </header>
 
-      <main className="flex-1 space-y-8 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <div className="flex items-center space-x-2">
-             <Link href="/upload" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-              Upload New Data
-            </Link>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="w-full py-20 md:py-32 lg:py-40 bg-gradient-to-b from-white to-gray-50">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-8 text-center">
+              <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium text-muted-foreground">
+                🚀 Now in Beta — Early Access Available
+              </div>
+              <div className="space-y-4 max-w-3xl">
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+                  Turn Your Data Into
+                  <span className="text-primary"> Growth</span>
+                </h1>
+                <p className="mx-auto max-w-[700px] text-gray-500 text-lg md:text-xl">
+                  KLOB gives you the insights you need to make smarter business decisions. 
+                  Upload your data, get actionable analytics, and watch your business thrive.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/contact">
+                  <Button size="lg" className="gap-2">
+                    Request a Demo
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="#features">
+                  <Button variant="outline" size="lg">
+                    See How It Works
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                No credit card required • Free consultation
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Logos/Social Proof Section */}
+        <section className="w-full py-12 border-y bg-gray-50/50">
+          <div className="container mx-auto px-4 md:px-6">
+            <p className="text-center text-sm font-medium text-muted-foreground mb-8">
+              TRUSTED BY FORWARD-THINKING BUSINESSES
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50">
+              {/* Placeholder logos - replace with real ones later */}
+              <div className="text-2xl font-bold text-gray-400">Acme Corp</div>
+              <div className="text-2xl font-bold text-gray-400">TechStart</div>
+              <div className="text-2xl font-bold text-gray-400">RetailPro</div>
+              <div className="text-2xl font-bold text-gray-400">GrowthCo</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="w-full py-20 md:py-32">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl mb-4">
+                Everything You Need to Grow
+              </h2>
+              <p className="mx-auto max-w-[600px] text-gray-500 text-lg">
+                Powerful tools designed for businesses that want to make data-driven decisions without the complexity.
+              </p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              <FeatureCard
+                icon={<BarChart3 className="h-10 w-10" />}
+                title="Real-Time Analytics"
+                description="Get instant insights into your sales, revenue, and performance metrics."
+              />
+              <FeatureCard
+                icon={<TrendingUp className="h-10 w-10" />}
+                title="Smart Forecasting"
+                description="AI-powered predictions to help you plan inventory and resources."
+              />
+              <FeatureCard
+                icon={<Zap className="h-10 w-10" />}
+                title="Instant Setup"
+                description="Upload your data and start seeing insights in minutes, not weeks."
+              />
+              <FeatureCard
+                icon={<Shield className="h-10 w-10" />}
+                title="Enterprise Security"
+                description="Your data is encrypted and protected with bank-level security."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section className="w-full py-20 md:py-32 bg-gray-50">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl mb-4">
+                How It Works
+              </h2>
+              <p className="mx-auto max-w-[600px] text-gray-500 text-lg">
+                Get started in three simple steps
+              </p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto">
+              <StepCard
+                number="1"
+                icon={<Upload className="h-8 w-8" />}
+                title="Upload Your Data"
+                description="Simply drag and drop your sales data. We support Excel, CSV, and more."
+              />
+              <StepCard
+                number="2"
+                icon={<LineChart className="h-8 w-8" />}
+                title="Get Insights"
+                description="Our platform instantly analyzes your data and generates actionable reports."
+              />
+              <StepCard
+                number="3"
+                icon={<Target className="h-8 w-8" />}
+                title="Grow Your Business"
+                description="Make informed decisions backed by data to accelerate your growth."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section className="w-full py-20 md:py-32 bg-primary text-primary-foreground">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-6 text-center">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                Ready to Transform Your Business?
+              </h2>
+              <p className="mx-auto max-w-[600px] text-primary-foreground/80 text-lg">
+                Join hundreds of businesses already using KLOB to make smarter decisions.
+              </p>
+              <Link href="/contact">
+                <Button size="lg" variant="secondary" className="gap-2">
+                  Get Started Today
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full py-12 border-t bg-gray-50">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="grid gap-8 md:grid-cols-4">
+            <div className="space-y-4">
+              <Link className="flex items-center gap-2 font-bold text-xl" href="/">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                KLOB
+              </Link>
+              <p className="text-sm text-muted-foreground">
+                Business analytics and forecasting made simple.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#features" className="hover:text-primary transition-colors">Features</Link></li>
+                <li><Link href="/contact" className="hover:text-primary transition-colors">Pricing</Link></li>
+                <li><Link href="/contact" className="hover:text-primary transition-colors">Demo</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/contact" className="hover:text-primary transition-colors">About</Link></li>
+                <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+                <li><Link href="/contact" className="hover:text-primary transition-colors">Careers</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} KLOB. All rights reserved.
           </div>
         </div>
-
-        {!data ? (
-          <div className="flex h-[450px] flex-col items-center justify-center rounded-xl border-2 border-dashed bg-background p-8 text-center animate-in fade-in zoom-in duration-300">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <BarChart3 className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold">No data available</h3>
-            <p className="mb-6 text-sm text-muted-foreground max-w-xs">
-              Upload your sales data to see insights and trends for your business.
-            </p>
-            <Link href="/upload" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
-              Get Started
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <KPICard 
-                title="Total Revenue" 
-                value={`$${data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-                description="+20.1% from last month" 
-              />
-              <KPICard 
-                title="Units Sold" 
-                value={data.totalUnits.toLocaleString()} 
-                icon={<Package className="h-4 w-4 text-muted-foreground" />}
-                description="+180.1% from last month"
-              />
-              <KPICard 
-                title="Active SKUs" 
-                value={data.uniqueSkus.toLocaleString()} 
-                icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-                description="Unique products sold"
-              />
-              <KPICard 
-                title="Avg. Order Value" 
-                value={`$${data.avgOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                icon={<BarChart3 className="h-4 w-4 text-muted-foreground" />}
-                description="Across all transactions"
-              />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="col-span-4 transition-all hover:shadow-md">
-                <RevenueChart data={data.chartData} />
-              </div>
-              
-              <Card className="col-span-3">
-                <CardHeader>
-                  <CardTitle>Upcoming Features</CardTitle>
-                  <CardDescription>
-                    What we're working on next.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <SkeletonItem title="Top Performing Products" />
-                  <SkeletonItem title="Inventory Forecast" />
-                  <SkeletonItem title="Channel Distribution" />
-                  <SkeletonItem title="Customer Retention" />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-      </main>
+      </footer>
     </div>
   )
 }
 
-function KPICard({ title, value, icon, description }: { title: string, value: string, icon: React.ReactNode, description: string }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <Card className="transition-all hover:shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
+    <Card className="text-center border-0 shadow-none bg-transparent">
+      <CardHeader>
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+          {icon}
+        </div>
+        <CardTitle className="text-xl">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {description}
-        </p>
+        <CardDescription className="text-base">{description}</CardDescription>
       </CardContent>
     </Card>
   )
 }
 
-function SkeletonItem({ title }: { title: string }) {
+function StepCard({ number, icon, title, description }: { number: string, icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">{title}</span>
-        <div className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Soon</div>
+    <div className="relative flex flex-col items-center text-center p-6">
+      <div className="absolute -top-2 -left-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+        {number}
       </div>
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-2/3" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md text-primary">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
     </div>
   )
 }

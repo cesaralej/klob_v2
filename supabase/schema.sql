@@ -2,6 +2,16 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ----------------------------
+-- CLEANUP (Reset for new schema)
+-- ----------------------------
+-- WARNING: This deletes existing data in these tables. 
+-- Since we are restructuring the tables significantly, a full reset is recommended.
+DROP TABLE IF EXISTS sales CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS transfers CASCADE;
+DROP TABLE IF EXISTS uploads CASCADE;
+
+-- ----------------------------
 -- 1. Uploads Table
 -- ----------------------------
 create table uploads (
@@ -12,6 +22,10 @@ create table uploads (
   row_count integer,
   warnings jsonb,
   error_message text,
+  filename text,
+  sales_count integer,
+  products_count integer,
+  transfers_count integer,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
-import { DollarSign, Package, BarChart3, TrendingUp, AlertCircle } from 'lucide-react'
+import { DollarSign, Package, BarChart3, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
 async function getDashboardData() {
@@ -11,8 +11,8 @@ async function getDashboardData() {
   // Fetch sales data
   const { data: sales, error } = await supabase
     .from('sales')
-    .select('sale_date, net_revenue, quantity, sku')
-    .order('sale_date', { ascending: true })
+    .select('fecha_venta, subtotal, cantidad, codigo_unico')
+    .order('fecha_venta', { ascending: true })
 
   if (error) {
     console.error('Error fetching sales data:', error)
@@ -29,17 +29,17 @@ async function getDashboardData() {
   }
 
   // Aggregate metrics
-  const totalRevenue = sales.reduce((sum, s) => sum + Number(s.net_revenue), 0)
-  const totalUnits = sales.reduce((sum, s) => sum + s.quantity, 0)
-  const uniqueSkus = new Set(sales.map(s => s.sku)).size
+  const totalRevenue = sales.reduce((sum, s) => sum + Number(s.subtotal), 0)
+  const totalUnits = sales.reduce((sum, s) => sum + s.cantidad, 0)
+  const uniqueSkus = new Set(sales.map(s => s.codigo_unico)).size
   const avgOrderValue = totalRevenue / sales.length
 
   // Aggregate chart data
   const chartDataMap = sales.reduce((acc: Record<string, number>, sale) => {
     let dateStr = 'Unknown'
-    if (sale.sale_date) {
+    if (sale.fecha_venta) {
       try {
-        const d = new Date(sale.sale_date)
+        const d = new Date(sale.fecha_venta)
         if (!isNaN(d.getTime())) {
           // Use YYYY-MM-DD format for consistency
           dateStr = d.toISOString().split('T')[0]
@@ -48,7 +48,7 @@ async function getDashboardData() {
         dateStr = 'Unknown'
       }
     }
-    acc[dateStr] = (acc[dateStr] || 0) + Number(sale.net_revenue || 0)
+    acc[dateStr] = (acc[dateStr] || 0) + Number(sale.subtotal || 0)
     return acc
   }, {})
 
@@ -73,7 +73,7 @@ async function getDashboardData() {
   }
 }
 
-export default async function Home() {
+export default async function DashboardPage() {
   const data = await getDashboardData()
 
   return (
