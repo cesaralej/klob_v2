@@ -46,15 +46,15 @@ export function DashboardFilters({ seasons, families, stores }: DashboardFilters
   const dateTo = searchParams.get('to')
 
   return (
-    <div className="flex flex-wrap items-center gap-4 bg-card p-4 rounded-lg border shadow-sm">
+    <div className="grid grid-cols-1 gap-4 bg-card p-4 rounded-lg border shadow-sm sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
       {/* Season Filter */}
-      <div className="flex flex-col space-y-1.5">
+      <div className="flex flex-col space-y-1.5 lg:w-[180px]">
         <label className="text-xs font-semibold text-muted-foreground">Season</label>
         <Select 
           value={currentSeason || 'all'} 
           onValueChange={(val) => handleFilterChange('season', val === 'all' ? null : val)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="All Seasons" />
           </SelectTrigger>
           <SelectContent>
@@ -67,13 +67,13 @@ export function DashboardFilters({ seasons, families, stores }: DashboardFilters
       </div>
 
       {/* Family Filter */}
-      <div className="flex flex-col space-y-1.5">
+      <div className="flex flex-col space-y-1.5 lg:w-[180px]">
         <label className="text-xs font-semibold text-muted-foreground">Family</label>
         <Select 
           value={currentFamily || 'all'} 
           onValueChange={(val) => handleFilterChange('family', val === 'all' ? null : val)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="All Families" />
           </SelectTrigger>
           <SelectContent>
@@ -85,14 +85,14 @@ export function DashboardFilters({ seasons, families, stores }: DashboardFilters
         </Select>
       </div>
 
-       {/* Store Filter - Using Select for now, could be MultiSelect if needed */}
-       <div className="flex flex-col space-y-1.5">
+       {/* Store Filter */}
+       <div className="flex flex-col space-y-1.5 lg:w-[180px]">
         <label className="text-xs font-semibold text-muted-foreground">Store</label>
         <Select 
           value={currentStore || 'all'} 
           onValueChange={(val) => handleFilterChange('store', val === 'all' ? null : val)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="All Stores" />
           </SelectTrigger>
           <SelectContent>
@@ -104,8 +104,8 @@ export function DashboardFilters({ seasons, families, stores }: DashboardFilters
         </Select>
       </div>
 
-      {/* Date Range Filter Simplified (Start Date) */}
-      <div className="flex flex-col space-y-1.5">
+      {/* Date Range Filter */}
+      <div className="flex flex-col space-y-1.5 sm:col-span-2 lg:col-span-1 lg:flex-1">
           <label className="text-xs font-semibold text-muted-foreground">Date Range</label>
           <div className="flex items-center gap-2">
             <Popover>
@@ -113,7 +113,7 @@ export function DashboardFilters({ seasons, families, stores }: DashboardFilters
                 <Button
                     variant={"outline"}
                     className={cn(
-                    "w-[240px] justify-start text-left font-normal",
+                    "w-full lg:w-[240px] justify-start text-left font-normal",
                     !dateFrom && "text-muted-foreground"
                     )}
                 >
@@ -133,25 +133,19 @@ export function DashboardFilters({ seasons, families, stores }: DashboardFilters
                 </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                 {/* Simplified Date Picker here - rendering calendar to pick range requires more complex state management 
-                     if using shadcn's range picker directly. For now, let's just make it clear this is a placeholder 
-                     logic or use a simpler approach. 
-                     
-                     Actually, standard shadcn date range usage:
-                 */}
                  <div className="p-4">
                      <p className="text-xs text-muted-foreground mb-2">Select Start & End</p>
-                     <div className="flex gap-2">
+                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <input 
                             type="date" 
-                            className="border rounded px-2 py-1 text-sm"
+                            className="border rounded px-2 py-1 text-sm w-full"
                             value={dateFrom || ''} 
                             onChange={(e) => handleFilterChange('from', e.target.value)}
                         />
-                        <span className="self-center">-</span>
+                        <span className="hidden sm:inline">-</span>
                         <input 
                             type="date" 
-                            className="border rounded px-2 py-1 text-sm"
+                            className="border rounded px-2 py-1 text-sm w-full"
                             value={dateTo || ''} 
                             onChange={(e) => handleFilterChange('to', e.target.value)}
                         />

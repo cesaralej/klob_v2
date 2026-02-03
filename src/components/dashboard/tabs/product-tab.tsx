@@ -59,7 +59,7 @@ export function ProductTab({ data }: ProductTabProps) {
                                 contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
                                 formatter={(value: any) => [`${Number(value).toFixed(1)}%`, "Margin"]}
                             />
-                            <Bar dataKey="marginPercent" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
+                            <Bar dataKey="marginPercent" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={20} />
                          </BarChart>
                        </ResponsiveContainer>
                     </div>
@@ -81,7 +81,7 @@ export function ProductTab({ data }: ProductTabProps) {
                                 contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
                                 formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Returns Value"]}
                             />
-                            <Bar dataKey="returns" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} barSize={20} />
+                            <Bar dataKey="returns" fill="var(--destructive)" radius={[0, 4, 4, 0]} barSize={20} />
                          </BarChart>
                        </ResponsiveContainer>
                     </div>
